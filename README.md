@@ -65,9 +65,23 @@ git push
 - Мова зараз тільки українська (single-page copy) — повний RU/EN перемикач
   свідомо не робили, щоб не роздувати простий сайт-візитку; якщо знадобиться
   — дублювати сторінки як `index.en.html` і т.п., а не вбудовувати JS-i18n.
-- HTTPS-сертифікат на sferaapp.com видається GitHub автоматично (Let's
-  Encrypt) після того, як GitHub бачить правильні DNS A-записи — це
-  відбувається саме собою, нічого чіпати не треба.
+- **HTTPS-сертифікат на sferaapp.com — УВАГА, авто-провижн підвів (2026-07-28).**
+  GitHub Pages довго віддавав дефолтний `CN=*.github.io` замість серта для
+  кастомного домену → `ERR_CERT_COMMON_NAME_INVALID`, і Google Play не міг
+  перевірити privacy-URL. У конфізі Pages поля `https_certificate` взагалі не
+  було, `html_url` лишався `http://`. Полагодив перезапуском провижінгу через
+  API (я залогінений у `gh` як `sferaapps-hub`):
+  ```bash
+  echo '{"cname":null}' | gh api --method PUT repos/sferaapps-hub/sfera-landing/pages --input -
+  sleep 20
+  echo '{"cname":"sferaapp.com"}' | gh api --method PUT repos/sferaapps-hub/sfera-landing/pages --input -
+  # чекати, поки cert → state:approved (кілька хвилин), потім увімкнути enforce:
+  echo '{"cname":"sferaapp.com","https_enforced":true}' | gh api --method PUT repos/sferaapps-hub/sfera-landing/pages --input -
+  ```
+  Перевірка: `echo | openssl s_client -connect sferaapp.com:443 -servername sferaapp.com 2>/dev/null | openssl x509 -noout -subject` має показати `CN=sferaapp.com`.
+  Зараз серт живий і `https_enforced:true`. Якщо колись знову впаде — повторити
+  цей remove+re-add. Те саме через UI: Settings → Pages → прибрати й знову
+  ввести кастомний домен.
 
 ## Домен і DNS (довідково, змінюється НЕ тут)
 
